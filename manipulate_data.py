@@ -103,12 +103,52 @@ def graph_delinquency_curve(customerID, customers):
 
     plt.show()
 
+
+def get_stats_on_cols(customers):
+    only_numbers = customers.applymap(np.isreal).all(1)
+    customers=customers[only_numbers]
+
+    col_names=[col_name for col_name in customers]
+
+    customers[col_names]=customers[col_names].astype(float)
+
+    stats = customers.describe(include='all').round(2)
+
+    return stats
+
+
+def get_more_stats_on_cols(customers):
+    only_numbers = customers.applymap(np.isreal).all(1)
+    customers=customers[only_numbers]
+
+    return customers.describe()
+
 if __name__ == '__main__':
     file_name = 'defaults.xlsx'
     customers = get_all_customers(file_name)
 
-    graph_raw_data(1, customers)
-    graph_delinquency_curve(1, customers)
+    stats2 = get_more_stats_on_cols(customers)
+
+    print(stats2)
+
+
+
+
+
+
+
+    # print(len(customers))
+    # print(only_numbers[:5])
+    # print(len(customers))
+
+
+
+
+    # print(customers.info())
+    # print(customers.head())
+
+    # graph_raw_data(1, customers)
+    # graph_delinquency_curve(1, customers)
 
 
     # for i in range(1,200):

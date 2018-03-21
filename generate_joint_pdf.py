@@ -48,6 +48,14 @@ def bin_count_dictionary(c):
 
     return newdict
 
+def get_stats_on_each_col(customers):
+    only_numbers = customers.applymap(np.isreal).all(1)
+    customers=customers[only_numbers]
+    col_names=[col_name for col_name in customers]
+    customers[col_names]=customers[col_names].astype(float)
+    stats = customers.describe(include='all').round(2)
+
+    return stats
 
 if __name__ == '__main__':
     customers = m.get_all_customers('defaults.xlsx')

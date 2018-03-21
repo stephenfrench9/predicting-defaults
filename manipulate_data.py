@@ -105,6 +105,9 @@ def graph_delinquency_curve(customerID, customers):
 
 
 def get_stats_on_cols(customers):
+    """Get statistics about the distribution of numbers in
+    each column of the 'customers' dataframe.
+    Returns: A data frame with stats about the input 'customers'"""
     only_numbers = customers.applymap(np.isreal).all(1)
     customers=customers[only_numbers]
 
@@ -118,6 +121,10 @@ def get_stats_on_cols(customers):
 
 
 def get_more_stats_on_cols(customers):
+    """Get additional statistics about the 'customers' dataframe.
+    These statistics are useful for designing 'binning' strategies
+    for the data. Included are statistics like 'number of unique entries'.
+    Returns: a dataframe with additional statistics about customers"""
     only_numbers = customers.applymap(np.isreal).all(1)
     customers=customers[only_numbers]
 

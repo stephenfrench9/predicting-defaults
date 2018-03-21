@@ -1,6 +1,7 @@
 import manipulate_data as m
 import matplotlib.pyplot as plt
 from collections import Counter
+import math
 
 def normalize(my_diction):
     total = 0
@@ -17,26 +18,91 @@ def add_number_of_lates_column(customers):
 
     return customers
 
+
+def bin_count_dictionary(c):
+    newdict = {}
+
+
+
+    for key, value in c.items():
+        if(((key+1)%3)==0):
+            newkey = key + 1
+        elif(((key-1)%3)==0):
+            newkey = key - 1
+        else:
+            newkey = key
+
+        if newkey in newdict:
+            newdict[newkey] += c[key]
+        else:
+            newdict[newkey] = c[key]
+
+    doomed_keys=[]
+    for key, value in newdict.items():
+        if key > 12:
+            newdict[12] += value
+            doomed_keys.append(key)
+
+    for key in doomed_keys:
+        del(newdict[key])
+
+    return newdict
+
+
 if __name__ == '__main__':
     customers = m.get_all_customers('defaults.xlsx')
     customers = customers[1:]
 
     customers = add_number_of_lates_column(customers)
-    defaults = customers["Y"] == 1
+    defaulters = customers["Y"] == 1
     payers = customers["Y"] == 0
 
+    plt.title("All Customers")
+    plt.bar(["payer","defaulter"], [len(customers[payers])/len(customers), len(customers[defaulters])/len(customers)], .8)
+    plt.xlabel("p(default): " + str(round(len(customers[defaulters])/len(customers), 2)))
+    plt.show()
 
-    col = customers[defaults]["Z6"][1:30000]
-    c = Counter(col)
+    man_defaulter = customers[defaulters]["X2"] == 1
+    woman_defaulter = customers[defaulters]["X2"] == 2
+
+    col = customers[defaulters]["Z6"][1:]
+    c = dict(Counter(col))
+    c = bin_count_dictionary(c)
     c = normalize(c)
     plt.figure(1)
-    plt.title("defaults, no cleaning")
-    plt.bar(c.keys(), c.values())
+    plt.ylim(0,.5)
+    plt.xlim(-14,14)
+    plt.title("defaults")
+    plt.bar(c.keys(), c.values(), 2.8)
 
-    col = customers[payers]["Z6"][1:30000]
+    col = customers[payers]["Z6"][1:]
     c = Counter(col)
+    c = bin_count_dictionary(c)
     c = normalize(c)
     plt.figure(2)
-    plt.title("payers, no cleaning")
-    plt.bar(c.keys(), c.values())
+    plt.ylim(0,.5)
+    plt.xlim(-14,14)
+    plt.title("payers")
+    plt.bar(c.keys(), c.values(), 2.8)
+    plt.show()
+
+    col = customers[defaulters][man_defaulter]["Z6"][1:]
+    c = Counter(col)
+    c = bin_count_dictionary(c)
+    c = normalize(c)
+    plt.figure(1)
+    plt.ylim(0,.5)
+    plt.xlim(-14,14)
+    plt.title("man defaulters")
+    plt.bar(c.keys(), c.values(), 2.8)
+
+    col = customers[defaulters][woman_defaulter]["Z6"][1:]
+    c = Counter(col)
+    c = bin_count_dictionary(c)
+    c = normalize(c)
+    plt.figure(2)
+    plt.ylim(0,.5)
+    plt.xlim(-14,14)
+    plt.title("woman defaulters")
+    plt.bar(c.keys(), c.values(), 2.8)
     plt.show()

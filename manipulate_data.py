@@ -20,7 +20,7 @@ def get_all_customers(filename):
     the table is a customer.
 
     Returns: A pandas data frame """
-    raw_excel = pd.ExcelFile(file_name)
+    raw_excel = pd.ExcelFile(filename)
     customers = raw_excel.parse('credit_defaults.csv')
 
     return customers
@@ -31,6 +31,8 @@ def place_into_list_and_reverse(a_series):
     reverse its order."""
     a_list = []
     length=len(a_series)
+
+    print(type(a_series))
 
     for i in range(0, length):
         a_list.append(a_series[i])
@@ -80,6 +82,8 @@ def graph_delinquency_curve(customerID, customers):
 
     months = ['april', 'may', 'june', 'july', 'aug', 'sept']
     one_customer = customers.loc[["ID", customerID],:]
+
+    print("The .loc function produces an object of type: " +str(type(one_customer)))
 
     payments=np.array(place_into_list_and_reverse(one_customer.iloc[1][17:23]))
     statements=np.array(place_into_list_and_reverse(one_customer.iloc[1][11:17]))

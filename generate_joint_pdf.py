@@ -1,8 +1,10 @@
 import manipulate_data as m
 import matplotlib.pyplot as plt
 from collections import Counter
-import math
 import pandas as pd
+import numpy as np
+import pickle
+
 
 def normalize(my_diction):
     total = 0
@@ -18,8 +20,6 @@ def add_number_of_lates_column(customers):
                         customers["X10"]+customers["X11"]
 
     return customers
-
-
 
 
 def add_binned_late_scores_column(customers):
@@ -212,37 +212,10 @@ def look_up(education, gender, latescore, age):
     cl = joint_pdf["bZ6"] == latescore
     ca = joint_pdf["X5"] == rage
 
-    print("DO WE HAVE ACCESS TO JOINT PDF")
-
-    print(joint_pdf.head())
-
     the_row = joint_pdf[ce & cg & cl & ca]
-
-    print("FROM LOOK UP FUNCTION: LENGTH OF the row: ", end="" )
-    print(len(the_row))
-
-    print("We are trying to match: " + "educa5ti: " + str(education) + "     genader: " + str(gender)
-          + "   latescore: " + str(latescore) + "   age: " + str(rage) )
-
-    print("The row type: ", end="")
-    print(type(the_row))
-
-    print("The row")
-    print(the_row)
-
-    print("The row labels")
-    print(the_row.index.values)
-
     scuba_gear = the_row.index.values
-
-    print("The int")
-    print(type(scuba_gear[0]))
-
-    print("the int, actualy")
-    print(scuba_gear[0])
-
     prob_default = the_row.at[scuba_gear[0], "default_pred"]
-    print("FROM LOOK UP FUNCTION: The prob is: " + str(prob_default))
+
     return prob_default
 
 
@@ -271,114 +244,190 @@ def build_joint_pdf(customers_train):
     return joint_pdf
 
 
+def produce_error_file():
+    starts = list(reversed(list(range(22250, 30000, 50))))
+    errors = []
+    customers_train = customers[:22250]
+    joint_pdf = build_joint_pdf(customers_train)
+
+
+    for i in starts:
+
+        customers_test = customers[i:]
+        customers_test["pred"] = customers_test.apply(row_operation, axis=1)
+        customers_test.is_copy = False
+        actual = customers_test["Y"].sum()
+        predicted = customers_test["pred"].sum()
+
+
+        #
+        error = abs(actual - predicted)/actual
+        error = round(error*100, 3)
+        print("trial " + str(i) + ": Error-> ", end="")
+        print(error)
+
+        errors.append(error)
+        pickle.dump(errors, open("errors_list.p", "wb"))
+
+
+def produce_error_plot():
+
+    with open("errors_list.p", "rb") as f:
+        errors = pickle.load(f)
+
+    starts = list(reversed(list(range(22250, 30000, 50))))
+    xax = [30000-a for a in starts]
+
+
+
+    plt.plot(xax, errors)
+    plt.title("Model Error as a Function of Group Size")
+    plt.xlabel("Group Size")
+    plt.ylabel("Percent Error")
+    plt.show()
+
+
+def produce_joint_pdf_plots(customers, e):
+    left_left = get_ls_dist(customers, e, 1, 1, 22)
+    left_right = get_ls_dist(customers, e, 1, 1, 42)
+    right_left =  get_ls_dist(customers, e, 1, 0, 22)
+    right_right = get_ls_dist(customers, e, 1, 0, 42)
+
+    plt.subplot(241)
+    plt.bar(left_left.keys(), left_left.values(), 2.7)
+    plt.ylim(0,400)
+    plt.xticks([])
+    plt.title("default \n young \n male")
+
+    plt.subplot(242)
+    plt.bar(left_right.keys(), left_right.values(), 2.7)
+    plt.yticks([])
+    plt.xticks([])
+    plt.ylim(0,400)
+    plt.title("default \n old \n male")
+
+    plt.subplot(243)
+    plt.bar(right_left.keys(), right_left.values(), 2.7)
+    plt.yticks([])
+    plt.xticks([])
+    plt.ylim(0,400)
+    plt.title("pay \n young \n male")
+
+    plt.subplot(244)
+    plt.bar(right_right.keys(), right_right.values(), 2.7)
+    plt.yticks([])
+    plt.xticks([])
+    plt.ylim(0,400)
+    plt.title("pay \n old \n male")
+
+    left_left = get_ls_dist(customers, e, 2, 1, 22)
+    left_right = get_ls_dist(customers, e, 2, 1, 42)
+    right_left = get_ls_dist(customers, e, 2, 0, 22)
+    right_right = get_ls_dist(customers, e, 2, 0, 42)
+
+
+
+    plt.subplot(245)
+    plt.bar(left_left.keys(), left_left.values(), 2.7)
+    plt.ylim(0, 400)
+    plt.xlabel("default \n young \n female")
+
+    plt.subplot(246)
+    plt.bar(left_right.keys(), left_right.values(), 2.7)
+    plt.yticks([])
+    plt.ylim(0, 400)
+    plt.xlabel("default \n old \n female")
+
+    plt.subplot(247)
+    plt.bar(right_left.keys(), right_left.values(), 2.7)
+    plt.yticks([])
+    plt.xlabel("pay \n young \n female")
+    plt.ylim(0, 400)
+
+    plt.subplot(248)
+    plt.bar(right_right.keys(), right_right.values(), 2.7)
+    plt.yticks([])
+    plt.ylim(0, 400)
+    plt.xlabel("pay \n old \n female")
+
+    plt.show()
+
+
+def produce_prob_default_graphs(customers, education):
+    """
+    Produce the profbabilty for default as a function
+    of late score, education, gender, and age.
+    :param customers:
+    :param education:
+    :return:
+    """
+    left_left = get_ls_dist(customers, e, 1, 1, 22)
+    left_right = get_ls_dist(customers, e, 1, 1, 42)
+    right_left =  get_ls_dist(customers, e, 1, 0, 22)
+    right_right = get_ls_dist(customers, e, 1, 0, 42)
+
+    for key, value in left_left.items():
+        other_value=right_left[key]
+        total=value+other_value
+        left_left[key]=value/total
+
+    plt.subplot(221)
+    plt.bar(left_left.keys(), left_left.values(), 2.7)
+    plt.title("young \n male")
+
+    for key, value in left_right.items():
+        other_value=right_right[key]
+        total=value+other_value
+        left_right[key]=value/total
+
+    plt.subplot(222)
+    plt.bar(left_right.keys(), left_right.values(), 2.7)
+    plt.yticks([])
+    plt.title("old \n male")
+
+
+
+
+    left_left = get_ls_dist(customers, e, 2, 1, 22)
+    left_right = get_ls_dist(customers, e, 2, 1, 42)
+    right_left = get_ls_dist(customers, e, 2, 0, 22)
+    right_right = get_ls_dist(customers, e, 2, 0, 42)
+
+    for key, value in left_left.items():
+        other_value=right_left[key]
+        total=value+other_value
+        left_left[key]=value/total
+
+    plt.subplot(223)
+    plt.bar(left_left.keys(), left_left.values(), 2.7)
+    plt.xlabel("young \n female")
+
+    for key, value in left_right.items():
+        if right_right.get(key):
+            other_value=right_right[key]
+            total=value+other_value
+            left_right[key]=value/total
+        else:
+            left_right[key]=1
+
+    plt.subplot(224)
+    plt.bar(left_right.keys(), left_right.values(), 2.7)
+    plt.yticks([])
+    plt.xlabel("old \n female")
+    plt.show()
+
+
 if __name__ == '__main__':
+
+
     customers = m.get_all_customers('defaults.xlsx')
     customers = customers[1:]
     customers = add_number_of_lates_column(customers)
     customers = add_binned_late_scores_column(customers)
     customers["X3"] = customers["X3"].replace([-4, -3, -2, -1, 0, 5, 6, 7, 8, 9, 10, 11, 12],4)
 
-    customers_train = customers[:22250]
-    customers_test = customers[22250:]
-    customers_test.is_copy = False
+    e = 1
 
-    joint_pdf = build_joint_pdf(customers_train)
-    customers_test["pred"] = customers_test.apply(row_operation, axis=1)
-
-    print(joint_pdf.head())
-
-    print(customers_test.head())
-    customers_test.to_csv('coastal city.csv')
+    produce_joint_pdf_plots(customers, e)
 
 
-    # accuracy = compare(customers_test)
-    # print(accuracy)
-
-
-  ######################
-    #
-    # left_left = get_ls_dist(customers, 1, 1, 1, 22)
-    # left_right = get_ls_dist(customers, 1, 1, 1, 42)
-    # right_left =  get_ls_dist(customers, 1, 1, 0, 22)
-    # right_right = get_ls_dist(customers, 1, 1, 0, 42)
-    #
-    # plt.subplot(211)
-    # plt.subplot(141)
-    # plt.bar(left_left.keys(), left_left.values(), 2.7)
-    # plt.ylim(0,400)
-    #
-    # plt.subplot(142)
-    # plt.bar(left_right.keys(), left_right.values(), 2.7)
-    # plt.yticks([])
-    # plt.ylim(0,400)
-    #
-    # plt.subplot(143)
-    # plt.bar(right_left.keys(), right_left.values(), 2.7)
-    # plt.yticks([])
-    # plt.ylim(0,400)
-    #
-    # plt.subplot(144)
-    # plt.bar(right_right.keys(), right_right.values(), 2.7)
-    # plt.yticks([])
-    # plt.ylim(0,400)
-    #
-    # plt.subplot(212)
-    # plt.plot([1,2,3])
-    # plt.show()
-
-#########################
-
-
-
-    # defaulters = customers["Y"] == 1
-    # payers = customers["Y"] == 0
-    #
-    # plt.title("All Customers")
-    # plt.bar(["payer","defaulter"], [len(customers[payers])/len(customers), len(customers[defaulters])/len(customers)], .8)
-    # plt.xlabel("p(default): " + str(round(len(customers[defaulters])/len(customers), 2)))
-    # plt.show()
-    #
-    # man_defaulter = customers[defaulters]["X2"] == 1
-    # woman_defaulter = customers[defaulters]["X2"] == 2
-    #
-    # col = customers[defaulters]["Z6"][1:]
-    # c = dict(Counter(col))
-    # c = bin_count_dictionary(c)
-    # c = normalize(c)
-    # plt.figure(1)
-    # plt.ylim(0,.5)
-    # plt.xlim(-14,14)
-    # plt.title("defaults")
-    # plt.bar(c.keys(), c.values(), 2.8)
-    #
-    # col = customers[payers]["Z6"][1:]
-    # c = Counter(col)
-    # c = bin_count_dictionary(c)
-    # c = normalize(c)
-    # plt.figure(2)
-    # plt.ylim(0,.5)
-    # plt.xlim(-14,14)
-    # plt.title("payers")
-    # plt.bar(c.keys(), c.values(), 2.8)
-    # plt.show()
-    #
-    # col = customers[defaulters][man_defaulter]["Z6"][1:]
-    # c = Counter(col)
-    # c = bin_count_dictionary(c)
-    # c = normalize(c)
-    # plt.figure(1)
-    # plt.ylim(0,.5)
-    # plt.xlim(-14,14)
-    # plt.title("man defaulters")
-    # plt.bar(c.keys(), c.values(), 2.8)
-    #
-    # col = customers[defaulters][woman_defaulter]["Z6"][1:]
-    # c = Counter(col)
-    # c = bin_count_dictionary(c)
-    # c = normalize(c)
-    # plt.figure(2)
-    # plt.ylim(0,.5)
-    # plt.xlim(-14,14)
-    # plt.title("woman defaulters")
-    # plt.bar(c.keys(), c.values(), 2.8)
-    # plt.show()

@@ -134,9 +134,9 @@ if __name__ == '__main__':
     file_name = 'defaults.xlsx'
     customers = get_all_customers(file_name)
 
-    stats2 = get_more_stats_on_cols(customers)
+    stats = get_stats_on_cols(customers)
 
-    print(stats2)
+    print(stats)
 
 
 
